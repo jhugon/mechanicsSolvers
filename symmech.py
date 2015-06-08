@@ -130,60 +130,75 @@ def hamiltonianEOM(hamiltonian,coordinates,momenta,timeDerivMap):
 
 class SymComputer(object):
 
-  def __init__(self,lagrangian,coordinates,t=Symbol('t'),velocity_suffix="_dot"):
+  def __init__(self,lagrangian,coordinates,velocities,t=Symbol('t')):
     for coord in coordinates:
-      name = str(coord)
-      if "_dot" in name:
-        raise Exception("Coordinate '{0}' contains the velocity_suffix '{1}'".format(name,velocity_suffix))
-      if name == str(t):
-        raise Exception("Coordinate '{0}' and time variable '{1}' have the same name".format(name,str(t)))
+      if str(coord) == str(t):
+        raise Exception("Coordinate '{0}' and time variable '{1}' have the same name".format(str(coord),str(t)))
 
-    self.coordinates = coordinates
     self.lagrangian = lagrangian
+    self.coordinates = coordinates
+    self.velocities = velocities
     self.t = t
-    self.velocity_suffix = velocity_suffix
 
-    self.velocities = None
     self.tdm = None
 
     self.momenta = None
     self.momentaDefs = None
     self.hamiltonian = None
 
-    self.eomsE = None
     self.eomsL = None
+    self.eomsH = None
 
-    self.setup()
+    self.haveEOMsL = False
+    self.haveEOMsH = False
 
-  def setup(self):
-    self.velocities = [str(x)+velocity_suffix]
-    self.tdm = symmech.generateTimeDerivMapFromCoords(self.coordinates)
+    self.tdm = generateTimeDerivMapFromCoords(self.coordinates)
+
+
+  def solveEulerLegrange(self):
+    self.eomsL =  eulerLegrangeEOM(self.lagrangian,self.coordinates,self.velocities,self.t,self.tdm)
+    self.haveEOMsL = True
+
+  def solveHamiltonian(self):
+    self.momenta, self.momentaDefs, self.hamiltonian = makeMomentaHamiltonian(self.lagrangian,
+                                                        self.coordinates,self.velocities,self.tdm)
+    self.eomsH = hamiltonianEOM(self.hamiltonian,self.coordinates,self.momenta,self.tdm)
+    self.haveEOMsH = True
+
+  def getEulerLegrangeEOMs(self):
+    if not self.haveEOMsL:
+      self.solveEulerLegrange()
+    return self.eomsL
+
+  def getHamiltonianEOMs(self):
+    if not self.haveEOMsH:
+      self.solveHamiltonian()
+    return self.eomsH
+
+  def __str__(self):
+    result = ""
+
+    result += "***SymComputer***"+"\n"
+    result += "L = "+str(self.lagrangian)+"\n"
+    if self.hamiltonian:
+      result += "H = "+str(simplify(self.hamiltonian))+"\n"
+    if self.momenta:
+      result += "momenta:"+"\n"
+      for mdef in self.momentaDefs:
+        result += "  "+str(mdef)+"\n"
+    if self.eomsL:
+      result += "Euler-Legrange EOM:"+"\n"
+      for eom in self.eomsL:
+        result += "  "+str(simplify(eom))+"\n"
+    if self.eomsH:
+      result += "Hamiltonian EOM:"+"\n"
+      for eom in self.eomsH:
+        result += "  "+str(simplify(eom))+"\n"
+    result += "*****************"+"\n"
+    return result
     
 
 if __name__ == "__main__":
-
-  def printSteps(L,coords,vels,t,tdm):
-    print "########################################"
-    print "########################################"
-    print "########################################"
-    momenta, momentaDefs, H = makeMomentaHamiltonian(L,coords,vels,tdm)
-    elEOM =  eulerLegrangeEOM(L,coords,vels,t,tdm)
-    hEOM =  hamiltonianEOM(H,coords,momenta,tdm)
-    print "L = "+str(L)
-    print "H = "+str(simplify(H))
-    print "momenta:"
-    for mdef in momentaDefs:
-      print "  "+str(mdef)
-    print "Euler-Legrange EOM:"
-    for eom in elEOM:
-      print "  "+str(simplify(eom))
-    print "Hamiltonian EOM:"
-    for eom in hEOM:
-      print "  "+str(simplify(eom))
-    print "########################################"
-    print "########################################"
-    print "########################################"
-    
 
   g = symbols('g')
   m = symbols('m')
@@ -198,10 +213,11 @@ if __name__ == "__main__":
   t = symbols('t')
 
   x = symbols('x')
-  x_dot = symbols('x_dot')
   y = symbols('y')
-  y_dot = symbols('y_dot')
   z = symbols('z')
+
+  x_dot = symbols('x_dot')
+  y_dot = symbols('y_dot')
   z_dot = symbols('z_dot')
 
   theta = symbols('theta')
@@ -211,28 +227,44 @@ if __name__ == "__main__":
   Ay = symbols('Ay')
   Az = symbols('Az')
 
-  tdm = generateTimeDerivMapFromCoords([x,y,z,Ax,Ay,Az,theta])
+  L = m * x_dot**2 / 2 + m * y_dot**2 / 2 + m * z_dot**2 / 2
+  sc = SymComputer(L,[x,y,z],[x_dot,y_dot,z_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
   
-  #L = m * x_dot**2 / 2 + m * y_dot**2 / 2 + m * z_dot**2 / 2
-  #printSteps(L,[x,y,z],[x_dot,y_dot,z_dot],t,tdm)
+  L = m * x_dot**2 / 2 + F*x
+  sc = SymComputer(L,[x],[x_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
   
-  #L = m * x_dot**2 / 2 + F*x
-  #printSteps(L,[x],[x_dot],t,tdm)
-  
-  #
-  #L = m * y_dot**2 / 2 - m*g*y
-  #printSteps(L,[y],[y_dot],t,tdm)
+  L = m * y_dot**2 / 2 - m*g*y
+  sc = SymComputer(L,[y],[y_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
 
-  #L = m * x_dot**2 / 2 + m * y_dot**2 / 2 + m * z_dot**2 / 2 + x_dot*Ax + y_dot*Ay + z_dot*Az - theta
-  #printSteps(L,[x,y,z],[x_dot,y_dot,z_dot],t,tdm)
-  #
-  #L = m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
-  #printSteps(L,[theta],[theta_dot],t,tdm)
+  L = m * x_dot**2 / 2 + m * y_dot**2 / 2 + m * z_dot**2 / 2 + x_dot*Ax + y_dot*Ay + z_dot*Az - theta
+  sc = SymComputer(L,[x,y,z],[x_dot,y_dot,z_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
+  
+  L = m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
+  sc = SymComputer(L,[theta],[theta_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
 
-  #L = (M+m)*x_dot**2/2 + m*x_dot*l*theta_dot*sympy.cos(theta) + m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
-  #printSteps(L,[x,theta],[x_dot,theta_dot],t,tdm)
+  L = (M+m)*x_dot**2/2 + m*x_dot*l*theta_dot*sympy.cos(theta) + m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
+  sc = SymComputer(L,[x,theta],[x_dot,theta_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
 
   L = M*x_dot**2/2 + I*theta_dot**2/2 + K*x_dot*theta_dot*sympy.cos(theta)+g*K*sympy.cos(theta) + tau*theta
-  printSteps(L,[x,theta],[x_dot,theta_dot],t,tdm)
-
-
+  sc = SymComputer(L,[x,theta],[x_dot,theta_dot])
+  sc.getEulerLegrangeEOMs()
+  sc.getHamiltonianEOMs()
+  print sc
