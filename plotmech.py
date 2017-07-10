@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import scipy
-from sympy import Symbol
 import solvemech
 from matplotlib import pyplot as mpl
 
@@ -26,20 +25,35 @@ def plotmech(times,results,coordinates,velmoms,fn):
 
 if __name__ == "__main__":
 
+  import sympy
+  from sympy import Symbol
+
   t = Symbol("t")
   x = Symbol("x")
   y = Symbol("y")
   z = Symbol("z")
+  theta = Symbol("theta")
+  thetaB = Symbol("thetaB")
   x_dot = Symbol("x_dot")
   y_dot = Symbol("y_dot")
   z_dot = Symbol("z_dot")
+  theta_dot = Symbol("theta_dot")
+  thetaB_dot = Symbol("thetaB_dot")
   m = Symbol("m")
   M = Symbol("M")
   g = Symbol("g")
+  I = Symbol('I')
+  R = Symbol('R')
+  l = Symbol('l')
+  tau = Symbol('tau')
+  lam = Symbol('lambda')
+
   constValsDict = {
     m:20.,
     M:0.,
     g:9.81,
+    I:0.,
+    tau:1.,
   }
 
   times = scipy.linspace(0,3,50)
@@ -54,3 +68,14 @@ if __name__ == "__main__":
   plotmech(times,timeSeriesH,["x"],["$p_x$"],"mgH.png")
   timeSeriesL = sm.solveEulerLegrange(times,initialValsL,constValsDict)
   plotmech(times,timeSeriesL,[x],[x_dot],"mgL.png")
+
+  L2 = (M+m+I/R)*x_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-x/R)
+  sm2 = solvemech.SolveMech(L2,[x,theta],[x_dot,theta_dot])
+  timeSeriesL2 = sm2.solveEulerLegrange(times,[0.,0.,0.,0.],constValsDict)
+  plotmech(times,timeSeriesL2,[x,theta],[x_dot,theta_dot],"L2.png")
+
+  L3 = (M+m)*x_dot**2/2 + I*thetaB_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-thetaB) + lam*(R*thetaB+x)
+  sm3 = solvemech.SolveMech(L3,[x,theta,thetaB],[x_dot,theta_dot,thetaB_dot])
+  timeSeriesL3 = sm3.solveEulerLegrange(times,[0.,0.,0.,0.,0.,0.],constValsDict)
+  plotmech(times,timeSeriesL3,[x,theta],[x_dot,theta_dot],"L3.png")
+
