@@ -209,6 +209,7 @@ if __name__ == "__main__":
   K = symbols('K')
   F = symbols('F')
   tau = symbols('tau')
+  lam = symbols('lambda')
 
   t = symbols('t')
 
@@ -222,6 +223,9 @@ if __name__ == "__main__":
 
   theta = symbols('theta')
   theta_dot = symbols('theta_dot')
+
+  thetaB = symbols('thetaB')
+  thetaB_dot = symbols('thetaB_dot')
 
   Ax = symbols('Ax')
   Ay = symbols('Ay')
@@ -251,20 +255,20 @@ if __name__ == "__main__":
   sc.getHamiltonianEOMs()
   print sc
   
-  L = m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
+  L = m*l**2*theta_dot**2/2 + m*g*l*(1-sympy.cos(theta))
   sc = SymComputer(L,[theta],[theta_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
   print sc
 
-  L = (M+m)*x_dot**2/2 + m*x_dot*l*theta_dot*sympy.cos(theta) + m*l**2*theta_dot**2/2 + m*g*l*sympy.cos(theta)
+  L = (M+m+I/R)*x_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-x/R)
   sc = SymComputer(L,[x,theta],[x_dot,theta_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
   print sc
 
-  L = M*x_dot**2/2 + I*theta_dot**2/2 + K*x_dot*theta_dot*sympy.cos(theta)+g*K*sympy.cos(theta) + tau*theta
-  sc = SymComputer(L,[x,theta],[x_dot,theta_dot])
+  L = (M+m)*x_dot**2/2 + I*thetaB_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-thetaB) + lam*(R*thetaB+x)
+  sc = SymComputer(L,[x,theta,thetaB],[x_dot,theta_dot,thetaB_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
   print sc

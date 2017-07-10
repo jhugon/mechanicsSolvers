@@ -64,7 +64,7 @@ class SolveMech(object):
     for vel in self.symComputer.velocities:
       varList.append(vel)
 
-    constList = sorted(constantValueDict.keys())
+    constList = constantValueDict.keys()
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
 
@@ -122,7 +122,7 @@ class SolveMech(object):
     for mom in self.symComputer.momenta:
       varList.append(mom)
 
-    constList = sorted(constantValueDict.keys())
+    constList = constantValueDict.keys()
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
 

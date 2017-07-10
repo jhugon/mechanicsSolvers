@@ -39,10 +39,10 @@ if __name__ == "__main__":
   constValsDict = {
     m:20.,
     M:0.,
-    g:10.,
+    g:9.81,
   }
 
-  times = scipy.linspace(0,1,20)
+  times = scipy.linspace(0,3,50)
   initialValsL = [0.,10.0]
   initialValsH = [0.,10.0*constValsDict[m]]
   
