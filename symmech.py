@@ -197,6 +197,73 @@ class SymComputer(object):
     result += "*****************"+"\n"
     return result
     
+class MatrixLagrangian(object):
+    """
+    Use linear algebra to manipulate a lagrangian using sympy
+    """
+
+    def __init__(self,kineticMatrix,velocityColumn,noVelocityTerms,coordinates,velocities):
+        """
+        You can use this class for Lagrangian of the form:
+            L = 0.5 * (q_dot row vector) * (kinetic matrix) * (q_dot column vector) 
+                + (q_dot row vector) * (velocity dependence column vector)
+                + (terms not dependant on velocity)
+
+        As described in Goldstein, Poole, and Safko, Classical Mechanics 3rd Ed. p339
+
+        The kinetic matrix is the first argument, velocity dependence is the second,
+            and all terms which don't depend on velocity should be put third. The final two
+            arguments are a list of coordinates and a list of cooresponding velocities.
+
+        velocityColumn may be None.
+        """
+
+        if not isinstance(kineticMatrix, Matrix):
+            raise Exception("KineticMatrix {} is not of type Matrix".format(kineticMatrix))
+        if not isinstance(velocityColumn, Matrix):
+            if not (velocityColumn is None):
+                raise Exception("velocityColumn {} is not of type Matrix".format(velocityColumn))
+
+        self.kineticMatrix = kineticMatrix
+        self.velocityColumn = velocityColumn
+        self.noVelocityTerms = noVelocityTerms
+        self.coordinates = coordinates
+        self.velocities = velocities
+        self.velocitiesColumn = Matrix(self.velocities)
+        self.velocitiesRow = self.velocitiesColumn.T
+
+    def getLagrangian(self):
+        """
+        Returns a sympy expression for the Lagrangian represented by this object
+        """
+        velocityDependence = 0
+        if not (self.velocityColumn is None):
+            velocityDependence = self.velocitiesRow * self.velocityColumn
+        return self.velocitiesRow*self.kineticMatrix*self.velocitiesColumn/2 + velocityDependence + self.noVelocityTerms
+
+    def getDiagonalizedKineticLagrangian(self):
+        """
+        Returns a sympy expression for the Lagrangian represented by this object
+        """
+        velocityDependence = 0
+        eigen = self.kineticMatrix.eigenvects()
+
+    def getInvertedKineticHamiltonian(self):
+        """
+        Returns a sympy expression for the Hamiltonian represented by this object, a list of the momenta, 
+            and a list of equations defining the momenta.
+        """
+
+        momenta = [symbols("p_"+str(coord)) for coord in self.coordinates]
+        momentaInTermsOfVel = self.kineticMatrix * self.velocitiesColumn + self.velocityColumn
+        momentaDefs = [Eq(mom,momInTermsOfVel) for mom,momInTermsOfVel in zip(momenta,momentaInTermsOfVel)]
+
+        kineticMomentaColumn = Matrix(momenta)
+        if not (self.velocityColumn is None):
+            kineticMomentaColumn -= self.velocityColumn
+        invKinetic = self.kineticMatrix**(-1)
+        hamiltonian = (kineticMomentaColumn.T)*invKinetic*(kineticMomentaColumn)/2 - self.noVelocityTerms
+        return hamiltonian, momenta, momentaDefs
 
 if __name__ == "__main__":
 
