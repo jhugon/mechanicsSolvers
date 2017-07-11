@@ -11,7 +11,7 @@ def plotmech(times,results,coordinates,velmoms,fn):
   allvars = coordinates+velmoms
   nvars = len(allvars)
   if nvars != results.shape[1]:
-    raise Exception("The length of coordinates + velmoms must equal the number of result varialbes")
+    raise Exception("The length of coordinates + velmoms must equal the number of result variables")
   if len(times) != results.shape[0]:
     raise Exception("The length of times must equal the result length")
 
@@ -46,17 +46,20 @@ if __name__ == "__main__":
   R = Symbol('R')
   l = Symbol('l')
   tau = Symbol('tau')
-  lam = Symbol('lambda')
+  lam = Symbol('lam')
 
   constValsDict = {
     m:20.,
-    M:0.,
+    M:20.,
     g:9.81,
-    I:0.,
-    tau:1.,
+    I:1.,
+    tau:1000,
+    R: 1.,
+    l: 1.,
+    lam: 1e-3,
   }
 
-  times = scipy.linspace(0,3,50)
+  times = scipy.linspace(0,3,5000)
   initialValsL = [0.,10.0]
   initialValsH = [0.,10.0*constValsDict[m]]
   
@@ -77,5 +80,5 @@ if __name__ == "__main__":
   L3 = (M+m)*x_dot**2/2 + I*thetaB_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-thetaB) + lam*(R*thetaB+x)
   sm3 = solvemech.SolveMech(L3,[x,theta,thetaB],[x_dot,theta_dot,thetaB_dot])
   timeSeriesL3 = sm3.solveEulerLegrange(times,[0.,0.,0.,0.,0.,0.],constValsDict)
-  plotmech(times,timeSeriesL3,[x,theta],[x_dot,theta_dot],"L3.png")
+  plotmech(times,timeSeriesL3,[x,theta,thetaB],[x_dot,theta_dot,thetaB_dot],"L3.png")
 

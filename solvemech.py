@@ -8,7 +8,7 @@ import scipy.integrate
 
 class SolveMech(object):
 
-  def __init__(self,lagrangian,coordinates,velocities,t=Symbol("t"),derivative_suffix="_dot"):
+  def __init__(self,lagrangian,coordinates,velocities,t=Symbol("t"),derivative_suffix="_dot",velocity_suffix="_v"):
     """
     Takes a lagrangian, made from sympy variables. Coordinates and velocities
     are lists of sympy variables used in the lagrangian. Make sure that coorinates[i]
@@ -16,7 +16,10 @@ class SolveMech(object):
     """
 
     self.symComputer = SymComputer(lagrangian,coordinates,velocities,t=t)
+    if derivative_suffix in velocity_suffix or velocity_suffix in derivative_suffix:
+        raise Exception("derivative_suffix and velocity_suffix can't be substrings of eachother")
     self.derivative_suffix = derivative_suffix
+    self.velocity_suffix = velocity_suffix
     self.diffeq = None
     self.constValsList = None
 
@@ -54,7 +57,8 @@ class SolveMech(object):
     fed to the contructor!
     """
     eoms = self.symComputer.getEulerLegrangeEOMs()
-    eomDict = self.rearangeForDerivs(eoms)
+    print eoms
+    eomDict = self.rearangeForDerivs(eoms,secondOrder=True)
     print self.symComputer.tdm
     print eomDict
 
@@ -145,26 +149,29 @@ class SolveMech(object):
 
     return result
 
-  def rearangeForDerivs(self,eoms):
-    result = {}
+  def rearangeForDerivs(self,eoms,secondOrder=False):
+    suffix = self.derivative_suffix
+    if secondOrder:
+        suffix += suffix
+    derivSet = set()
     for eom in eoms:
-      derivList = []
       for x in sympy.preorder_traversal(eom):
-        if type(x) == sympy.Symbol and self.derivative_suffix in str(x):
-          derivList.append(x)
-      if len(derivList) == 0:
-        raise Exception("No time derivative was found in eom: '{0}', where derivative has suffix of '{1}'".format(eom,self.derivative_suffix))
-      if len(derivList) > 1:
-        raise Exception("More than one time derivative, '{2}', was found in eom: '{0}', where derivative has suffix of '{1}'".format(eom,self.derivative_suffix,derivList))
-      deriv = derivList[0]
-      solns = sympy.solve(eom,deriv)
-      if len(solns) == 0:
-        raise Exception("No solution was found in eom: '{0}', for '{1}'".format(eom,deriv))
-      if len(solns) > 1:
-        raise Exception("Multiple solutions, {2}, were found in eom: '{0}', for '{1}'".format(eom,deriv,solns))
-      expr = solns[0]
-      result[deriv] = expr
-    return result
+        if type(x) == sympy.Symbol and suffix in str(x):
+          derivSet.add(x)
+    derivList = list(derivSet)
+    if len(derivList) == 0:
+      raise Exception("No time derivative was found in eom: '{0}', where derivative has suffix of '{1}'".format(eom,suffix))
+    solns = sympy.solve(eoms,derivList)
+    if len(solns) < len(derivList):
+      raise Exception("Too few solutions, {2}, were found for '{1}'".format(eom,derivList,solns))
+    if len(solns) > len(derivList):
+      raise Exception("Too many solutions, {2}, were found for '{1}'".format(eom,derivList,solns))
+    for deriv in derivList:
+      try:
+        solns[deriv]
+      except KeyError:
+        raise Exception("Couldn't find solution for {1}, in solutions {2}, in EOMs '{0}'".format(eom,deriv,solns))
+    return solns
 
 if __name__ == "__main__":
   from matplotlib import pyplot as mpl
