@@ -47,16 +47,18 @@ if __name__ == "__main__":
   l = Symbol('l')
   tau = Symbol('tau')
   lam = Symbol('lam')
+  hev = Symbol('hev')
 
   constValsDict = {
     m:20.,
     M:20.,
     g:9.81,
     I:1.,
-    tau:1000,
+    tau: lambda d: 10 if d['t'] < 1 else -20,
     R: 1.,
     l: 1.,
     lam: 1e-3,
+    hev: lambda d: 0 if d['t'] < 1 else 1,
   }
 
   times = scipy.linspace(0,3,5000)
@@ -64,7 +66,7 @@ if __name__ == "__main__":
   initialValsH = [0.,10.0*constValsDict[m]]
   
 
-  L = m*x_dot**2/2 - m*g*x
+  L = m*x_dot**2/2 - m*g*x*hev
 
   sm = solvemech.SolveMech(L,[x],[x_dot])
   timeSeriesH = sm.solveHamiltonian(times,initialValsH,constValsDict)

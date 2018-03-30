@@ -5,6 +5,7 @@ import sympy
 from sympy import Symbol
 import scipy
 import scipy.integrate
+import types
 
 class SolveMech(object):
 
@@ -22,6 +23,7 @@ class SolveMech(object):
     self.velocity_suffix = velocity_suffix
     self.diffeq = None
     self.constValsList = None
+    self.allVarList = None
 
   def __str__(self):
     result = ""
@@ -31,8 +33,13 @@ class SolveMech(object):
 
   def __call__(self,yarr,t):
     #print "call: ",yarr,t
-    allvars = [t]+list(yarr)+self.constValsList
-    #print "allvars: ",allvars
+    constVals = []
+    for p in self.constValsList:
+      try:
+        constVals.append(float(p))
+      except TypeError:
+        constVals.append(self.callConstFunc(p,yarr,t))
+    allvars = [t]+list(yarr)+constVals
     result = scipy.zeros(len(yarr))
     for i in range(len(yarr)):
         result[i] = self.diffeq[i](*allvars)
@@ -71,6 +78,7 @@ class SolveMech(object):
     constList = constantValueDict.keys()
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
+    self.allVarList = allVarList
 
     ## create functions to be called with list [t]+[coord1,coord2,...]+[vel1,vel2,...]+[const1,const2,...]
     exprList = []
@@ -94,6 +102,7 @@ class SolveMech(object):
 
     self.diffeq = None
     self.constValsList = None
+    self.allVarList = None
 
     return result
 
@@ -129,6 +138,7 @@ class SolveMech(object):
     constList = constantValueDict.keys()
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
+    self.allVarList = allVarList
 
     ## create functions to be called with list [t]+[coord1,coord2,...]+[mom1,mom2,...]+[const1,const2,...]
     exprList = []
@@ -146,6 +156,7 @@ class SolveMech(object):
 
     self.diffeq = None
     self.constValsList = None
+    self.allVarList = None
 
     return result
 
@@ -173,6 +184,16 @@ class SolveMech(object):
         raise Exception("Couldn't find solution for {1}, in solutions {2}, in EOMs '{0}'".format(eom,deriv,solns))
     return solns
 
+  def callConstFunc(self,func,yarr,t):
+    allVarNameList = [str(i) for i in self.allVarList]
+    params = {}
+    for name,val in zip(allVarNameList,[t]+list(yarr)+self.constValsList):
+      try:
+        params[name] = float(val)
+      except TypeError:
+        pass
+    return func(params)
+
 if __name__ == "__main__":
   from matplotlib import pyplot as mpl
 
@@ -188,8 +209,9 @@ if __name__ == "__main__":
   g = Symbol("g")
   constValsDict = {
     m:20.,
-    M:0.,
+    #M:0.,
     g:10.,
+    #g: lambda d: 10.-10*d['t'],
   }
 
   times = scipy.linspace(0,1,20)
