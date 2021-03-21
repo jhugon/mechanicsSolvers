@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sympy
 from sympy import *
@@ -17,16 +17,17 @@ def difftotal(expr, diffby, diffmap):
   
   Taken from http://robotfantastic.org/total-derivatives-in-sympy.html
   """
+
   # Replace all symbols in the diffmap by a functional form
-  fnexpr = expr.subs({s:s(diffby) for s in diffmap})
+  fnexpr = expr.subs({s:Function(s)(diffby) for s in diffmap})
   # Do the differentiation
   diffexpr = diff(fnexpr, diffby)
   # Replace the Derivatives with the variables in diffmap
-  derivmap = {Derivative(v(diffby), diffby):dv 
-              for v,dv in diffmap.iteritems()}
+  derivmap = {Derivative(Function(v)(diffby), diffby):dv 
+              for v,dv in diffmap.items()}
   finaldiff = diffexpr.subs(derivmap)
   # Replace the functional forms with their original form
-  return finaldiff.subs({s(diffby):s for s in diffmap})
+  return finaldiff.subs({Function(s)(diffby):s for s in diffmap})
 
 def generateTimeDerivMapFromCoords(*args):
   """
@@ -87,7 +88,7 @@ def makeMomentaHamiltonian(lagrangian,coordinates,velocities,timeDerivMap):
 
   momenta = [symbols("p_"+str(coord)) for coord in coordinates]
   for mom, coord in zip(momenta,coordinates):
-    if not timeDerivMap.has_key(mom):
+    if mom not in timeDerivMap:
       timeDerivMap[mom] = symbols("p_dot_"+str(coord))
   momentaInTermsOfVel = [diff(lagrangian,vel) for vel in velocities]
   momentaDefs = [Eq(mom,momInTermsOfVel) for mom,momInTermsOfVel in zip(momenta,momentaInTermsOfVel)]
@@ -302,40 +303,40 @@ if __name__ == "__main__":
   sc = SymComputer(L,[x,y,z],[x_dot,y_dot,z_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
   
   L = m * x_dot**2 / 2 + F*x
   sc = SymComputer(L,[x],[x_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
   
   L = m * y_dot**2 / 2 - m*g*y
   sc = SymComputer(L,[y],[y_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
 
   L = m * x_dot**2 / 2 + m * y_dot**2 / 2 + m * z_dot**2 / 2 + x_dot*Ax + y_dot*Ay + z_dot*Az - theta
   sc = SymComputer(L,[x,y,z],[x_dot,y_dot,z_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
   
   L = m*l**2*theta_dot**2/2 + m*g*l*(1-sympy.cos(theta))
   sc = SymComputer(L,[theta],[theta_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
 
   L = (M+m+I/R)*x_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-x/R)
   sc = SymComputer(L,[x,theta],[x_dot,theta_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)
 
   L = (M+m)*x_dot**2/2 + I*thetaB_dot**2/2 + m*l**2*theta_dot**2/2 + m*l*x_dot*theta_dot*sympy.cos(theta) - m*g*l*(1-sympy.cos(theta)) + tau*(theta-thetaB) + lam*(R*thetaB+x)
   sc = SymComputer(L,[x,theta,thetaB],[x_dot,theta_dot,thetaB_dot])
   sc.getEulerLegrangeEOMs()
   sc.getHamiltonianEOMs()
-  print sc
+  print(sc)

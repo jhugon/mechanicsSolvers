@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from symmech import SymComputer
 import sympy
@@ -64,10 +64,10 @@ class SolveMech(object):
     fed to the contructor!
     """
     eoms = self.symComputer.getEulerLegrangeEOMs()
-    print eoms
+    print(eoms)
     eomDict = self.rearangeForDerivs(eoms,secondOrder=True)
-    print self.symComputer.tdm
-    print eomDict
+    print(self.symComputer.tdm)
+    print(eomDict)
 
     varList = []
     for coord in self.symComputer.coordinates:
@@ -75,7 +75,7 @@ class SolveMech(object):
     for vel in self.symComputer.velocities:
       varList.append(vel)
 
-    constList = constantValueDict.keys()
+    constList = list(constantValueDict.keys())
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
     self.allVarList = allVarList
@@ -84,13 +84,13 @@ class SolveMech(object):
     exprList = []
     for var in varList:
       var_dot = self.symComputer.tdm[var]
-      if eomDict.has_key(var_dot):
+      if var_dot in eomDict:
         exprList.append(eomDict[var_dot])
       else:
         exprList.append(var_dot)
-    print "vars:", varList
-    print "diffexps:", exprList
-    print "allVarList: ",allVarList
+    print("vars:", varList)
+    print("diffexps:", exprList)
+    print("allVarList: ",allVarList)
     self.diffeq = []
     for expr in exprList:
       self.diffeq.append(sympy.lambdify(allVarList,expr))
@@ -135,7 +135,7 @@ class SolveMech(object):
     for mom in self.symComputer.momenta:
       varList.append(mom)
 
-    constList = constantValueDict.keys()
+    constList = list(constantValueDict.keys())
     self.constValsList = [constantValueDict[x] for x in constList]
     allVarList = [self.symComputer.t]+varList+constList
     self.allVarList = allVarList
@@ -224,7 +224,7 @@ if __name__ == "__main__":
   sm = SolveMech(L,[x],[x_dot])
   timeSeriesH = sm.solveHamiltonian(times,initialValsH,constValsDict)
   timeSeriesL = sm.solveEulerLegrange(times,initialValsL,constValsDict)
-  print sm
+  print(sm)
 
   mpl.subplot(2, 1, 1)
   mpl.plot(times,timeSeriesH[:,0], 'b-')
